@@ -1,13 +1,16 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 using UnityEngine;
+using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
 namespace BrackeysJam2021.Assets.Scripts.Player {
-    public static class MovementPlane {
+    public static class PlaneField {
 
         static Tile[, ] grid;
-
+        static List<Pallet> registeredPallets = new List<Pallet> ();
         public static void GenerateGrid (Vector3 center, Vector2Int gridSize) {
             grid = new Tile[gridSize.x, gridSize.y];
 
@@ -16,6 +19,46 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
 
                     grid[x, y] = new Tile (center + new Vector3 (x - (grid.GetLength (0) / 2f), 0, y - (grid.GetLength (1) / 2f)), Tile.TileType.Walkable);
                 }
+            }
+        }
+
+        public static void RegisterPallet (float baseSpawnRate, float spawnRateIncrement, GameObject palletPrefab, Action<SnakeController> onPalletPickup) {
+            registeredPallets.Add (new Pallet (baseSpawnRate, spawnRateIncrement, palletPrefab, onPalletPickup));
+        }
+
+        public static IEnumerator StartGeneratingPallets () {
+
+            while (true) {
+
+                yield return new WaitForEndOfFrame ();
+
+                for (int i = 0; i < registeredPallets.Count; i++) {
+                    Pallet registedPallet = registeredPallets[i];
+                    registedPallet.CurrentSpawnRate += Time.deltaTime;
+
+                    if (registedPallet.CurrentSpawnRate >= Mathf.Max (registedPallet.BaseSpawnRate - registedPallet.ModifiedSpawnRate, 0.85f)) {
+
+                        Tile randomTile = GetTileAtRandomCoordinates ();
+
+                        if (randomTile != null) {
+                            randomTile.assignedPallet = new PalletObject (registedPallet.PalletPrefab, randomTile.position, registedPallet.OnPalletPickup);
+                            randomTile.type = Tile.TileType.Pickup;
+                        }
+                        registedPallet.CurrentSpawnRate = 0;
+                        registedPallet.ModifiedSpawnRate += registedPallet.SpawnRateIncrement;
+
+                    }
+                }
+            }
+
+        }
+
+        public static void ResetGrid () {
+            foreach (var tile in grid) {
+
+                tile.type = Tile.TileType.Walkable;
+                tile.assignedPallet?.RemovePallet ();
+                tile.assignedPallet = null;
             }
         }
 
@@ -30,11 +73,13 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
             return grid[coordinates.x, coordinates.y];
         }
 
-        public static Tile GetTileAtRandomCoordinates () {
+        public static Tile GetTileAtRandomCoordinates (int depth = 3) {
+            if (depth <= 0) return null;
+
             Tile tile = GetTileAtCoordinates (new Vector2Int (Random.Range (0, grid.GetLength (0)), Random.Range (0, grid.GetLength (1))));
 
-            if (tile == null)
-                return GetTileAtRandomCoordinates ();
+            if (tile == null || tile.type == Tile.TileType.Unwalkable || tile.type == Tile.TileType.Pickup)
+                return GetTileAtRandomCoordinates (depth - 1);
 
             return tile;
         }
@@ -56,11 +101,12 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
         public enum TileType {
             Unwalkable,
             Walkable,
-            Default,
-            Accelerate
+            Pickup
         }
 
         public TileType type;
-        public GameObject indicator;
+        public PalletObject assignedPallet;
+
     }
+
 }

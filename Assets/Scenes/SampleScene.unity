@@ -340,13 +340,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 1017112595}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a50456a4358ac9e47867c62a26de64e9, type: 3}
+  m_Script: {fileID: 11500000, guid: 88546812086e1de4a96089b030d36bf8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultTailIncreasePalletModel: {fileID: 7711590235425859940, guid: 773f6f4f52a99474480570c59af727fd, type: 3}
-  accelerationPalletModel: {fileID: 8495841278510310371, guid: 95820e20d06021e4c90db311e24fda28, type: 3}
-  palletMinSpawnRate: 0.25
-  palletMaxSpawnRate: 1.5
+  player: {fileID: 1080294440}
+  playAreaSize: {x: 30, y: 30}
+  startGameOnAwake: 1
+  defaultPalletPrefab: {fileID: 7711590235425859940, guid: 773f6f4f52a99474480570c59af727fd, type: 3}
+  startingDefaultPalletSpawningRate: 5
+  defaultPalletSpawningRateIncrement: 0.1
 --- !u!1 &1080294438
 GameObject:
   m_ObjectHideFlags: 0
@@ -393,7 +395,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba6f7ceb192feea4b83de356f25ea872, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movementSpeed: 0.25
+  movementSpeed: 0.15
   movementInput: {fileID: 3874153905732924306, guid: f7b2163e99fc62e45b63d1ad67bc94d9, type: 3}
   tailPrefab: {fileID: 8673637318041135400, guid: 6bf96dadf68144d4da6bf099d41f44fb, type: 3}
 --- !u!65 &1080294441

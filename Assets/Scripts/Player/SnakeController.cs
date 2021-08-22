@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
+using BrackeysJam2021.Assets.Manager;
 using BrackeysJam2021.Assets.Scripts.Player;
 
 using UnityEngine;
@@ -13,12 +14,11 @@ public class SnakeController : MonoBehaviour {
     public InputActionReference movementInput;
     public GameObject tailPrefab;
 
-    Vector2Int currentPosition;
-    Vector2Int currentDirection;
+    internal Vector2Int currentPosition;
+    internal Vector2Int oldPosition;
+    internal Vector2Int currentDirection;
 
-    List<Tail> currentTail = new List<Tail> ();
-
-    Coroutine movementCoroutine;
+    internal List<Tail> currentTail = new List<Tail> ();
 
     private void OnEnable () {
         movementInput.action.Enable ();
@@ -28,19 +28,7 @@ public class SnakeController : MonoBehaviour {
         movementInput.action.Disable ();
     }
 
-    private void Awake () {
-        MovementPlane.GenerateGrid (transform.position, new Vector2Int (30, 30));
-        StartGame ();
-    }
-
-    public void StartGame () {
-        PlaneManager.Get.SpawnPallet = true;
-        currentPosition = MovementPlane.Center;
-        currentDirection = Vector2Int.up;
-        movementCoroutine = StartCoroutine (MovePlayer ());
-    }
-
-    private IEnumerator MovePlayer () {
+    public IEnumerator MovePlayer () {
         yield return null;
 
         int initialTailCount = 0;
@@ -49,12 +37,12 @@ public class SnakeController : MonoBehaviour {
 
             yield return new WaitForSeconds (movementSpeed);
 
-            Vector2Int oldPosition = currentPosition;
+            oldPosition = currentPosition;
             currentPosition += currentDirection;
-            Tile resultingTile = MovementPlane.GetTileAtCoordinates (currentPosition);
+            Tile resultingTile = PlaneField.GetTileAtCoordinates (currentPosition);
 
             if (resultingTile == null) {
-                Die ();
+                GameManager.Do.EndGame ();
                 yield break;
             }
 
@@ -64,18 +52,20 @@ public class SnakeController : MonoBehaviour {
                     UpdateTailPosition (oldPosition);
                     break;
 
-                case Tile.TileType.Default:
+                case Tile.TileType.Pickup:
                     transform.position = resultingTile.position;
-                    currentTail.Add (new Tail (tailPrefab, currentTail));
-                    UpdateTailPosition (oldPosition);
-                    if (resultingTile.indicator)
-                        Destroy (resultingTile.indicator);
+
+                    if (resultingTile.assignedPallet != null) {
+                        resultingTile.assignedPallet.OnPalletPickup?.Invoke (this);
+                        resultingTile.assignedPallet.RemovePallet ();
+                    }
+                    resultingTile.assignedPallet = null;
 
                     resultingTile.type = Tile.TileType.Walkable;
                     break;
 
                 case Tile.TileType.Unwalkable:
-                    Die ();
+                    GameManager.Do.EndGame ();
                     break;
 
                 default:
@@ -84,7 +74,7 @@ public class SnakeController : MonoBehaviour {
 
             if (initialTailCount <= 3) {
 
-                currentTail.Add (new Tail (tailPrefab, currentTail));
+                currentTail.Add (new Tail (tailPrefab));
                 UpdateTailPosition (oldPosition);
                 initialTailCount++;
             }
@@ -93,39 +83,29 @@ public class SnakeController : MonoBehaviour {
 
     }
 
-    private void UpdateTailPosition (Vector2Int coordinate) {
+    public void UpdateTailPosition (Vector2Int coordinate) {
         for (int tailIndex = currentTail.Count - 1; tailIndex >= 0; tailIndex--) {
             if (currentTail[tailIndex].currentCoordinate == currentPosition) {
-                Die ();
+                GameManager.Do.EndGame ();
                 break;
             }
 
             if (tailIndex == 0) {
 
-                currentTail[tailIndex].MoveTail (coordinate);
+                currentTail[tailIndex].MoveTail (coordinate, currentTail);
                 continue;
             }
 
-            currentTail[tailIndex].MoveTail (currentTail[tailIndex - 1].currentCoordinate);
+            currentTail[tailIndex].MoveTail (currentTail[tailIndex - 1].currentCoordinate, currentTail);
 
         }
-    }
-
-    public void Die () {
-        gameObject.SetActive (false);
-        foreach (var tailPart in currentTail) {
-            Destroy (tailPart.tailModel);
-        }
-
-        StopCoroutine (movementCoroutine);
-        currentTail.Clear ();
-        PlaneManager.Get.SpawnPallet = false;
-        PlaneManager.Get.ClearPallets ();
     }
 
     private void Update () {
+
         currentDirection = movementInput.action.ReadValue<Vector2> () is { } input && input != Vector2.zero ?
             GetLockedDirection (new Vector2Int (Mathf.CeilToInt (input.x), Mathf.CeilToInt (input.y))) : currentDirection;
+
     }
 
     private Vector2Int GetLockedDirection (Vector2Int input) {
@@ -148,16 +128,6 @@ public class SnakeController : MonoBehaviour {
         return input;
     }
 
-    private void OnDrawGizmos () {
-        if (MovementPlane.Grid is { } createdGrid) {
-
-            foreach (var tile in createdGrid) {
-                Gizmos.color = (tile.type == Tile.TileType.Walkable ? Color.cyan : tile.type == Tile.TileType.Unwalkable ? Color.red : Color.yellow) - new Color (0, 0, 0, 0.5f);
-                Gizmos.DrawCube (tile.position, Vector3.one * 0.8f);
-            }
-        }
-    }
-
     [Serializable]
     public class Tail {
 
@@ -165,24 +135,24 @@ public class SnakeController : MonoBehaviour {
         public Vector2Int currentCoordinate;
         public GameObject tailModel;
 
-        public Tail (GameObject tailModel, List<Tail> currentTail) {
+        public Tail (GameObject tailModel) {
             this.tailModel = UnityEngine.Object.Instantiate (tailModel);
         }
 
-        public void MoveTail (Vector2Int newCoordinate) {
+        public void MoveTail (Vector2Int newCoordinate, List<Tail> currentTail) {
 
-            Tile resultingTile = MovementPlane.GetTileAtCoordinates (newCoordinate);
+            Tile resultingTile = PlaneField.GetTileAtCoordinates (newCoordinate);
 
             switch (resultingTile.type) {
 
                 case Tile.TileType.Walkable:
-                case Tile.TileType.Default:
-                case Tile.TileType.Accelerate:
+                case Tile.TileType.Pickup:
                     tailModel.transform.position = resultingTile.position;
                     break;
 
                 case Tile.TileType.Unwalkable:
-                    tailModel.SetActive (false);
+                    Destroy (tailModel);
+                    currentTail.Remove (this);
                     break;
             }
 
