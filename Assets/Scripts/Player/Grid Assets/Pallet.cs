@@ -30,6 +30,7 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
         public PalletObject (GameObject prefab, Vector3 position, Action<SnakeController> @event) {
             OnPalletPickup = @event;
             palletModel = Object.Instantiate (prefab, position, Quaternion.identity);
+            palletModel.transform.SetParent (GameObject.FindGameObjectWithTag ("Grid/Pallets").transform);
         }
 
         public void RemovePallet () {

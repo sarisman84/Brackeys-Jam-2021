@@ -9,13 +9,14 @@ namespace BrackeysJam2021.Assets.Manager {
 
         public SnakeController player;
         public Vector2Int playAreaSize = new Vector2Int (30, 30);
+        public SpriteRenderer tilePrefab;
         public bool startGameOnAwake;
 
         [Header ("Default Pallet Settings")]
         public GameObject defaultPalletPrefab;
         public float startingDefaultPalletSpawningRate, defaultPalletSpawningRateIncrement;
 
-        Coroutine movementCoroutine, pelletSpawnerCoroutine, playerInputCoroutine;
+        Coroutine movementCoroutine, pelletSpawnerCoroutine, exclusionZoneCoroutine;
 
         public static GameManager Do { get; private set; }
 
@@ -52,11 +53,12 @@ namespace BrackeysJam2021.Assets.Manager {
 
         public void StartGame () {
             player.gameObject.SetActive (true);
-            PlaneField.GenerateGrid (transform.position, playAreaSize);
+            PlaneField.GenerateGrid (transform.position, playAreaSize, tilePrefab);
             player.currentPosition = PlaneField.Center;
             player.currentDirection = Vector2Int.up;
             movementCoroutine = StartCoroutine (player.MovePlayer ());
             pelletSpawnerCoroutine = StartCoroutine (PlaneField.StartGeneratingPallets ());
+            exclusionZoneCoroutine = StartCoroutine (PlaneField.StartGeneratingExclusionZones ());
         }
 
         public void EndGame () {
@@ -68,6 +70,7 @@ namespace BrackeysJam2021.Assets.Manager {
 
             StopCoroutine (movementCoroutine);
             StopCoroutine (pelletSpawnerCoroutine);
+            StopCoroutine (exclusionZoneCoroutine);
             player.currentTail.Clear ();
             PlaneField.ResetGrid ();
 
@@ -77,7 +80,7 @@ namespace BrackeysJam2021.Assets.Manager {
             if (PlaneField.Grid is { } createdGrid) {
 
                 foreach (var tile in createdGrid) {
-                    Gizmos.color = (tile.type == Tile.TileType.Walkable ? Color.cyan : tile.type == Tile.TileType.Unwalkable ? Color.red : Color.yellow) - new Color (0, 0, 0, 0.5f);
+                    Gizmos.color = (tile.Type == Tile.TileType.Walkable ? Color.cyan : tile.Type == Tile.TileType.Unwalkable ? Color.red : Color.yellow) - new Color (0, 0, 0, 0.5f);
                     Gizmos.DrawCube (tile.position, Vector3.one * 0.8f);
                 }
             }
