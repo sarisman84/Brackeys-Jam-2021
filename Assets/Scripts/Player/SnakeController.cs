@@ -46,7 +46,7 @@ public class SnakeController : MonoBehaviour {
                 yield break;
             }
 
-            switch (resultingTile.type) {
+            switch (resultingTile.Type) {
                 case Tile.TileType.Walkable:
                     transform.position = resultingTile.position;
                     UpdateTailPosition (oldPosition);
@@ -61,7 +61,7 @@ public class SnakeController : MonoBehaviour {
                     }
                     resultingTile.assignedPallet = null;
 
-                    resultingTile.type = Tile.TileType.Walkable;
+                    resultingTile.SetTileType (Tile.TileType.Walkable);
                     break;
 
                 case Tile.TileType.Unwalkable:
@@ -136,14 +136,14 @@ public class SnakeController : MonoBehaviour {
         public GameObject tailModel;
 
         public Tail (GameObject tailModel) {
-            this.tailModel = UnityEngine.Object.Instantiate (tailModel);
+            this.tailModel = UnityEngine.Object.Instantiate (tailModel, GameObject.FindGameObjectWithTag ("Player").transform);
         }
 
         public void MoveTail (Vector2Int newCoordinate, List<Tail> currentTail) {
 
             Tile resultingTile = PlaneField.GetTileAtCoordinates (newCoordinate);
 
-            switch (resultingTile.type) {
+            switch (resultingTile.Type) {
 
                 case Tile.TileType.Walkable:
                 case Tile.TileType.Pickup:
