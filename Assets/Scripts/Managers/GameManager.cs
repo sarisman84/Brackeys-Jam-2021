@@ -25,7 +25,7 @@ namespace BrackeysJam2021.Assets.Manager {
 
         public static GameManager Do { get; private set; }
 
-        public void Awake () {
+        public void Start () {
 
             if (Do != null) {
                 Destroy (gameObject);
@@ -33,7 +33,7 @@ namespace BrackeysJam2021.Assets.Manager {
             }
 
             Do = this;
-
+            ScoreManager.Get.SetDisplayActive = false;
             try {
                 player.gameObject.SetActive (false);
                 player.transform.position = Vector3.zero;
@@ -53,6 +53,8 @@ namespace BrackeysJam2021.Assets.Manager {
             PlaneField.RegisterPallet (startingDefaultPalletSpawningRate, defaultPalletSpawningRateIncrement, defaultPalletPrefab, (player) => {
                 player.currentTail.Add (new SnakeController.Tail (player.tailPrefab));
                 player.UpdateTailPosition (player.oldPosition);
+                ScoreManager.Get.Score += 10;
+                AudioManager.Play ("Pallet_Pickup");
             });
         }
 
@@ -64,6 +66,8 @@ namespace BrackeysJam2021.Assets.Manager {
             movementCoroutine = StartCoroutine (player.MovePlayer ());
             pelletSpawnerCoroutine = StartCoroutine (PlaneField.StartGeneratingPallets ());
             exclusionZoneCoroutine = StartCoroutine (PlaneField.StartGeneratingExclusionZones ());
+            ScoreManager.Get.SetDisplayActive = true;
+            ScoreManager.Get.Score = 0;
         }
 
         public void EndGame () {
@@ -80,6 +84,7 @@ namespace BrackeysJam2021.Assets.Manager {
             PlaneField.ResetGrid ();
 
             onGameEnd?.Invoke ();
+            ScoreManager.Get.SetDisplayActive = false;
 
         }
 

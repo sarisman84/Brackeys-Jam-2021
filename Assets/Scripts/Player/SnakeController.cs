@@ -113,20 +113,21 @@ public class SnakeController : MonoBehaviour {
     }
 
     private Vector2Int GetLockedDirection (Vector2Int input) {
+        bool isInputDiagonal = input == Vector2Int.one || input == -Vector2Int.one || input == new Vector2Int (1, -1) || input == new Vector2Int (-1, 1);
         if (currentDirection == Vector2Int.up) {
-            return input == Vector2Int.down ? currentDirection : input;
+            return input == Vector2Int.down || isInputDiagonal ? currentDirection : input;
         }
 
         if (currentDirection == Vector2Int.down) {
-            return input == Vector2Int.up ? currentDirection : input;
+            return input == Vector2Int.up || isInputDiagonal ? currentDirection : input;
         }
 
         if (currentDirection == Vector2Int.left) {
-            return input == Vector2Int.right ? currentDirection : input;
+            return input == Vector2Int.right || isInputDiagonal ? currentDirection : input;
         }
 
         if (currentDirection == Vector2Int.right) {
-            return input == Vector2Int.left ? currentDirection : input;
+            return input == Vector2Int.left || isInputDiagonal ? currentDirection : input;
         }
 
         return input;

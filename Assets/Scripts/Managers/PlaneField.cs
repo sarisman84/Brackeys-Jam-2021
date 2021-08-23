@@ -42,7 +42,7 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             int iterations = 1;
             List<Tile> tilesToReset = new List<Tile> ();
             while (true) {
-                yield return new WaitForSeconds (25f);
+                yield return new WaitForSeconds (10f);
 
                 int zoneCount = iterations;
 
@@ -50,7 +50,7 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
 
                     bool resetTiles = Random.Range (0, 2) == 1;
 
-                    List<Tile> resultingZone = GenerateExclusionZone (GetTileAtRandomCoordinatesAwayFromThePlayer ());
+                    List<Tile> resultingZone = GenerateExclusionZone (new Vector2Int (3, 3), new Vector2Int (11, 11));
 
                     if (resetTiles)
                         tilesToReset.AddRange (resultingZone);
@@ -59,7 +59,7 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
                 iterations++;
 
                 if (tilesToReset.Count > 0) {
-                    yield return new WaitForSeconds (10f);
+                    yield return new WaitForSeconds (5f);
                     foreach (var tile in tilesToReset) {
                         tile.SetTileType (Tile.TileType.Walkable);
                     }
@@ -69,28 +69,30 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             }
         }
 
-        private static Tile GetTileAtRandomCoordinatesAwayFromThePlayer () {
+        private static Tile GetTileAtRandomCoordinatesAwayFromThePlayer (Vector2Int zoneSize) {
             Tile foundTile = GetTileAtRandomCoordinates ();
 
-            if (TileIsInsideTheBoundaryOf (foundTile, SnakeController.PlayerCoordinates, 3f)) {
-                return GetTileAtRandomCoordinatesAwayFromThePlayer ();
+            if (TileIsInsideTheBoundaryOf (foundTile, SnakeController.PlayerCoordinates, zoneSize + new Vector2Int (2, 2))) {
+                return GetTileAtRandomCoordinatesAwayFromThePlayer (zoneSize);
             }
             return foundTile;
         }
 
-        private static bool TileIsInsideTheBoundaryOf (Tile tileToCompare, Vector2Int boundaryPosition, float boundarySize) {
-            Vector2Int posHalfExtends = new Vector2Int (boundaryPosition.x + Mathf.RoundToInt (boundarySize / 2f), boundaryPosition.y + Mathf.RoundToInt (boundarySize / 2f));
-            Vector2Int negHalfExtends = new Vector2Int (boundaryPosition.x - Mathf.RoundToInt (boundarySize / 2f), boundaryPosition.y - Mathf.RoundToInt (boundarySize / 2f));
+        private static bool TileIsInsideTheBoundaryOf (Tile tileToCompare, Vector2Int boundaryPosition, Vector2Int boundarySize) {
+            Vector2Int posHalfExtends = new Vector2Int (boundaryPosition.x + Mathf.RoundToInt (boundarySize.x / 2f), boundaryPosition.y + Mathf.RoundToInt (boundarySize.y / 2f));
+            Vector2Int negHalfExtends = new Vector2Int (boundaryPosition.x - Mathf.RoundToInt (boundarySize.x / 2f), boundaryPosition.y - Mathf.RoundToInt (boundarySize.y / 2f));
             return
             tileToCompare.coordinate.x >= posHalfExtends.x && tileToCompare.coordinate.x <= negHalfExtends.x &&
                 tileToCompare.coordinate.y >= posHalfExtends.y && tileToCompare.coordinate.y <= negHalfExtends.y;
         }
 
-        private static List<Tile> GenerateExclusionZone (Tile tile) {
+        private static List<Tile> GenerateExclusionZone (Vector2Int minSize, Vector2Int maxSize) {
 
-            Vector2Int zoneSize = new Vector2Int (Random.Range (2, 11), Random.Range (2, 11));
+            Vector2Int zoneSize = new Vector2Int (Random.Range (minSize.x, maxSize.x), Random.Range (minSize.y, maxSize.y));
 
             List<Tile> resultingZone = new List<Tile> ();
+
+            Tile tile = GetTileAtRandomCoordinatesAwayFromThePlayer (zoneSize);
 
             for (int x = -Mathf.RoundToInt (zoneSize.x / 2f); x < Mathf.RoundToInt (zoneSize.x / 2f) / 2f; x++) {
                 for (int y = -Mathf.RoundToInt (zoneSize.y / 2f); y < Mathf.RoundToInt (zoneSize.y / 2f) / 2f; y++) {
@@ -112,7 +114,9 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
         }
 
         public static IEnumerator StartGeneratingPallets () {
-
+            for (int i = 0; i < registeredPallets.Count; i++) {
+                registeredPallets[i].ModifiedSpawnRate = 0;
+            }
             while (true) {
 
                 yield return new WaitForEndOfFrame ();

@@ -37,7 +37,7 @@ namespace BrackeysJam2021.Assets.Scripts.Managers.GridAssets {
                     break;
 
                 case TileType.Unwalkable:
-                    PlaneFieldRenderer.SetVisualTileColor (this, Color.black);
+                    PlaneFieldRenderer.SetVisualTileColor (this, PlaneFieldRenderer.TransparentColor);
                     break;
             }
         }

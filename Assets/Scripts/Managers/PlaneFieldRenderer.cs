@@ -8,6 +8,8 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
     public static class PlaneFieldRenderer {
         static Dictionary<Vector2Int, VisualTile> registeredTilesToRender = new Dictionary<Vector2Int, VisualTile> ();
 
+        public static Color TransparentColor => new Color (0, 0, 0, 0);
+
         public static void CreateVisualTile (Tile tile, SpriteRenderer tilePrefab) {
             if (registeredTilesToRender.ContainsKey (tile.coordinate)) {
                 registeredTilesToRender[tile.coordinate].renderer.gameObject.SetActive (true);
