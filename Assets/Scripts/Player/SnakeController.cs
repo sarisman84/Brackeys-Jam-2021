@@ -3,7 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 
 using BrackeysJam2021.Assets.Manager;
-using BrackeysJam2021.Assets.Scripts.Player;
+using BrackeysJam2021.Assets.Scripts.Managers;
+using BrackeysJam2021.Assets.Scripts.Managers.GridAssets;
 
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -19,6 +20,8 @@ public class SnakeController : MonoBehaviour {
     internal Vector2Int currentDirection;
 
     internal List<Tail> currentTail = new List<Tail> ();
+
+    public static Vector2Int PlayerCoordinates { get; private set; }
 
     private void OnEnable () {
         movementInput.action.Enable ();
@@ -39,6 +42,7 @@ public class SnakeController : MonoBehaviour {
 
             oldPosition = currentPosition;
             currentPosition += currentDirection;
+            PlayerCoordinates = currentPosition;
             Tile resultingTile = PlaneField.GetTileAtCoordinates (currentPosition);
 
             if (resultingTile == null) {

@@ -2,11 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
+using BrackeysJam2021.Assets.Scripts.Managers.GridAssets;
+
 using UnityEngine;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
-namespace BrackeysJam2021.Assets.Scripts.Player {
+namespace BrackeysJam2021.Assets.Scripts.Managers {
     public class PlaneField {
 
         static Tile[, ] grid;
@@ -25,7 +27,8 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
 
                     grid[x, y] = new Tile (new Vector2Int (x, y),
                         center + new Vector3 (x - (grid.GetLength (0) / 2f), 0, y - (grid.GetLength (1) / 2f)),
-                        Tile.TileType.Walkable, Object.Instantiate (tilePrefab, GameObject.FindGameObjectWithTag ("Grid").transform));
+                        Tile.TileType.Walkable);
+                    PlaneFieldRenderer.CreateVisualTile (grid[x, y], tilePrefab);
                 }
             }
         }
@@ -47,7 +50,7 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
 
                     bool resetTiles = Random.Range (0, 2) == 1;
 
-                    List<Tile> resultingZone = GenerateExclusionZone (GetTileAtRandomCoordinates ());
+                    List<Tile> resultingZone = GenerateExclusionZone (GetTileAtRandomCoordinatesAwayFromThePlayer ());
 
                     if (resetTiles)
                         tilesToReset.AddRange (resultingZone);
@@ -64,6 +67,23 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
                 }
 
             }
+        }
+
+        private static Tile GetTileAtRandomCoordinatesAwayFromThePlayer () {
+            Tile foundTile = GetTileAtRandomCoordinates ();
+
+            if (TileIsInsideTheBoundaryOf (foundTile, SnakeController.PlayerCoordinates, 3f)) {
+                return GetTileAtRandomCoordinatesAwayFromThePlayer ();
+            }
+            return foundTile;
+        }
+
+        private static bool TileIsInsideTheBoundaryOf (Tile tileToCompare, Vector2Int boundaryPosition, float boundarySize) {
+            Vector2Int posHalfExtends = new Vector2Int (boundaryPosition.x + Mathf.RoundToInt (boundarySize / 2f), boundaryPosition.y + Mathf.RoundToInt (boundarySize / 2f));
+            Vector2Int negHalfExtends = new Vector2Int (boundaryPosition.x - Mathf.RoundToInt (boundarySize / 2f), boundaryPosition.y - Mathf.RoundToInt (boundarySize / 2f));
+            return
+            tileToCompare.coordinate.x >= posHalfExtends.x && tileToCompare.coordinate.x <= negHalfExtends.x &&
+                tileToCompare.coordinate.y >= posHalfExtends.y && tileToCompare.coordinate.y <= negHalfExtends.y;
         }
 
         private static List<Tile> GenerateExclusionZone (Tile tile) {
@@ -121,10 +141,11 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
         public static void ResetGrid () {
             foreach (var tile in grid) {
 
-                tile.SetTileType (Tile.TileType.Walkable);
+                PlaneFieldRenderer.RemoveVisualTile (tile);
                 tile.assignedPallet?.RemovePallet ();
                 tile.assignedPallet = null;
             }
+
         }
 
         public static Tile[, ] Grid => grid;

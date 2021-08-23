@@ -3,7 +3,7 @@ using System;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace BrackeysJam2021.Assets.Scripts.Player {
+namespace BrackeysJam2021.Assets.Scripts.Managers.GridAssets {
     public class Pallet {
 
         public Pallet (float baseSpawnRate, float spawnRateIncrement, GameObject palletPrefab, Action<SnakeController> onPalletPickup) {
@@ -29,7 +29,8 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
 
         public PalletObject (GameObject prefab, Vector3 position, Action<SnakeController> @event) {
             OnPalletPickup = @event;
-            palletModel = Object.Instantiate (prefab, position, Quaternion.identity);
+            palletModel = Object.Instantiate (prefab);
+            palletModel.transform.position = position;
             palletModel.transform.SetParent (GameObject.FindGameObjectWithTag ("Grid/Pallets").transform);
         }
 

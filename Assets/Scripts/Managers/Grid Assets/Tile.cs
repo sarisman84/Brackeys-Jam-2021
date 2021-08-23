@@ -1,21 +1,23 @@
-using UnityEngine;
+using System;
 
-namespace BrackeysJam2021.Assets.Scripts.Player {
+using BrackeysJam2021.Assets.Scripts.Managers;
+
+using UnityEngine;
+using Object = UnityEngine.Object;
+
+namespace BrackeysJam2021.Assets.Scripts.Managers.GridAssets {
     public class Tile {
 
         public Vector3 position;
         public Vector2Int coordinate;
-        private SpriteRenderer tileRenderer;
-        private TileType type;
-        private Color defaultTileColor;
 
-        public Tile (Vector2Int coordinate, Vector3 position, TileType type, SpriteRenderer gameObject) {
+        private TileType type;
+
+        public Tile (Vector2Int coordinate, Vector3 position, TileType type) {
             this.position = position;
             this.type = type;
             this.coordinate = coordinate;
-            gameObject.transform.position = position;
-            tileRenderer = gameObject;
-            defaultTileColor = tileRenderer.color;
+
         }
 
         public enum TileType {
@@ -31,11 +33,11 @@ namespace BrackeysJam2021.Assets.Scripts.Player {
             switch (type) {
                 case TileType.Walkable:
                 case TileType.Pickup:
-                    tileRenderer.color = defaultTileColor;
+                    PlaneFieldRenderer.SetVisualTileColor (this, PlaneFieldRenderer.GetDefaultVisualTileColor (this));
                     break;
 
                 case TileType.Unwalkable:
-                    tileRenderer.color = Color.black;
+                    PlaneFieldRenderer.SetVisualTileColor (this, Color.black);
                     break;
             }
         }

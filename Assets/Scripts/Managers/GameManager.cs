@@ -1,8 +1,11 @@
-using System;
+using BrackeysJam2021.Assets.Scripts.Managers;
+using BrackeysJam2021.Assets.Scripts.Managers.GridAssets;
 
-using BrackeysJam2021.Assets.Scripts.Player;
+using UnityEditor;
 
 using UnityEngine;
+using UnityEngine.Events;
+
 namespace BrackeysJam2021.Assets.Manager {
 
     public class GameManager : MonoBehaviour {
@@ -11,6 +14,8 @@ namespace BrackeysJam2021.Assets.Manager {
         public Vector2Int playAreaSize = new Vector2Int (30, 30);
         public SpriteRenderer tilePrefab;
         public bool startGameOnAwake;
+        [Header ("Events")]
+        public UnityEvent onGameEnd;
 
         [Header ("Default Pallet Settings")]
         public GameObject defaultPalletPrefab;
@@ -74,13 +79,26 @@ namespace BrackeysJam2021.Assets.Manager {
             player.currentTail.Clear ();
             PlaneField.ResetGrid ();
 
+            onGameEnd?.Invoke ();
+
+        }
+
+        public void Quit () {
+#if UNITY_EDITOR
+            if (Application.isEditor && Application.isPlaying) {
+
+                EditorApplication.ExitPlaymode ();
+                return;
+            }
+#endif
+            Application.Quit ();
         }
 
         private void OnDrawGizmos () {
             if (PlaneField.Grid is { } createdGrid) {
 
                 foreach (var tile in createdGrid) {
-                    Gizmos.color = (tile.Type == Tile.TileType.Walkable ? Color.cyan : tile.Type == Tile.TileType.Unwalkable ? Color.red : Color.yellow) - new Color (0, 0, 0, 0.5f);
+                    Gizmos.color = (tile.coordinate == SnakeController.PlayerCoordinates ? Color.green : tile.Type == Tile.TileType.Walkable ? Color.cyan : tile.Type == Tile.TileType.Unwalkable ? Color.red : Color.yellow) - new Color (0, 0, 0, 0.5f);
                     Gizmos.DrawCube (tile.position, Vector3.one * 0.8f);
                 }
             }
