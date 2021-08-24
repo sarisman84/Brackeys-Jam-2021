@@ -73,9 +73,9 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             }
 
             for (int x = 0; x < grid.GetLength (0); x++) {
-
-                for (int y = grid.GetLength (1) - 1; y >= x; y--) {
-                    PlaneFieldRenderer.CreateVisualTile (grid[x, Mathf.Clamp (y - x, 0, grid.GetLength (1) - 1)], tilePrefab);
+                for (int y = grid.GetLength (1) - 1; y >= 0; y--) {
+                    if(x + grid.GetLength(0) - y<grid.GetLength(0))
+                    PlaneFieldRenderer.CreateVisualTile (grid[x+ grid.GetLength(0)-y, y ], tilePrefab);
                 }
 
                 yield return new WaitForSecondsRealtime (0.05f);
