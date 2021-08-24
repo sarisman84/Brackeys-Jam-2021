@@ -37,32 +37,6 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
 
         private static IEnumerator DrawSelfAndAdjacentTiles (Action onGridGenerationCompletion, SpriteRenderer tilePrefab) {
 
-            // List<Tile> tilesPendingForDrawing = new List<Tile> ();
-            // tilesPendingForDrawing.Add (GetTileAtCoordinates (Vector2Int.zero));
-            // while (tilesPendingForDrawing.Count > 0) {
-            //     int count = tilesPendingForDrawing.Count;
-            //     for (int i = 0; i < count; i++) {
-
-            //         if (i >= tilesPendingForDrawing.Count) continue;
-            //         Tile tile = tilesPendingForDrawing[i];
-            //         PlaneFieldRenderer.CreateVisualTile (tile, tilePrefab);
-
-            //         if (GetTileAtCoordinates (tile.coordinate + Vector2Int.right) is { } eastAdjacentTile && !PlaneFieldRenderer.IsTileAlreadyDrawn (eastAdjacentTile))
-            //             tilesPendingForDrawing.Add (eastAdjacentTile);
-            //         if (GetTileAtCoordinates (tile.coordinate + Vector2Int.up) is { } topAdjacentTile && !PlaneFieldRenderer.IsTileAlreadyDrawn (topAdjacentTile))
-            //             tilesPendingForDrawing.Add (topAdjacentTile);
-            //         if (GetTileAtCoordinates (tile.coordinate + Vector2Int.down) is { } bottomAdjacentTile && !PlaneFieldRenderer.IsTileAlreadyDrawn (bottomAdjacentTile))
-            //             tilesPendingForDrawing.Add (bottomAdjacentTile);
-            //         if (GetTileAtCoordinates (tile.coordinate + Vector2Int.left) is { } westAdjacentTile && !PlaneFieldRenderer.IsTileAlreadyDrawn (westAdjacentTile))
-            //             tilesPendingForDrawing.Add (westAdjacentTile);
-
-            //         tilesPendingForDrawing.Remove (tile);
-
-            //     }
-            //     yield return new WaitForSecondsRealtime (0.05f);
-
-            // }
-
             for (int x = 0; x < grid.GetLength (0); x++) {
                 PlaneFieldRenderer.CreateVisualTile (grid[x, 0], tilePrefab);
                 for (int y = 1; y <= x; y++) {
@@ -80,19 +54,6 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
 
                 yield return new WaitForSecondsRealtime (0.05f);
             }
-
-            // for (int x = 1; x < grid.GetLength (0); x++) {
-            //     // PlaneFieldRenderer.CreateVisualTile (grid[x, grid.GetLength (1) - 1], tilePrefab);
-            //     for (int x1 = grid.GetLength (1) - 1; x1 >= x; x1--) {
-            //         PlaneFieldRenderer.CreateVisualTile (grid[x1, grid.GetLength (1) - x], tilePrefab);
-
-            //         yield return new WaitForSecondsRealtime (0.05f);
-
-            //     }
-
-            //     yield return new WaitForSecondsRealtime (0.05f);
-
-            // }
 
             onGridGenerationCompletion?.Invoke ();
         }
