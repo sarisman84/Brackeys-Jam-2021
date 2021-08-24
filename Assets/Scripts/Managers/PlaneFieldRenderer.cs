@@ -38,6 +38,10 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             return new Color ();
         }
 
+        public static bool IsTileAlreadyDrawn (Tile origin) {
+            return registeredTilesToRender.ContainsKey (origin.coordinate) ? registeredTilesToRender[origin.coordinate].renderer.gameObject.activeSelf : false;
+        }
+
         public static void SetVisualTileColor (Tile tile, Color newColor) {
             if (registeredTilesToRender.ContainsKey (tile.coordinate)) {
                 registeredTilesToRender[tile.coordinate].renderer.color = newColor;

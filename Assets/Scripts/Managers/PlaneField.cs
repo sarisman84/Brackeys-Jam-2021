@@ -19,7 +19,7 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
         }
         static List<Pallet> registeredPallets = new List<Pallet> ();
 
-        public static void GenerateGrid (Vector3 center, Vector2Int gridSize, SpriteRenderer tilePrefab) {
+        public static IEnumerator GenerateGrid (Vector3 center, Vector2Int gridSize, SpriteRenderer tilePrefab, Action onGridGenerationCompletion) {
             grid = new Tile[gridSize.x, gridSize.y];
 
             for (int x = 0; x < grid.GetLength (0); x++) {
@@ -28,9 +28,73 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
                     grid[x, y] = new Tile (new Vector2Int (x, y),
                         center + new Vector3 (x - (grid.GetLength (0) / 2f), 0, y - (grid.GetLength (1) / 2f)),
                         Tile.TileType.Walkable);
-                    PlaneFieldRenderer.CreateVisualTile (grid[x, y], tilePrefab);
+
                 }
             }
+            yield return DrawSelfAndAdjacentTiles (onGridGenerationCompletion, tilePrefab);
+
+        }
+
+        private static IEnumerator DrawSelfAndAdjacentTiles (Action onGridGenerationCompletion, SpriteRenderer tilePrefab) {
+
+            // List<Tile> tilesPendingForDrawing = new List<Tile> ();
+            // tilesPendingForDrawing.Add (GetTileAtCoordinates (Vector2Int.zero));
+            // while (tilesPendingForDrawing.Count > 0) {
+            //     int count = tilesPendingForDrawing.Count;
+            //     for (int i = 0; i < count; i++) {
+
+            //         if (i >= tilesPendingForDrawing.Count) continue;
+            //         Tile tile = tilesPendingForDrawing[i];
+            //         PlaneFieldRenderer.CreateVisualTile (tile, tilePrefab);
+
+            //         if (GetTileAtCoordinates (tile.coordinate + Vector2Int.right) is { } eastAdjacentTile && !PlaneFieldRenderer.IsTileAlreadyDrawn (eastAdjacentTile))
+            //             tilesPendingForDrawing.Add (eastAdjacentTile);
+            //         if (GetTileAtCoordinates (tile.coordinate + Vector2Int.up) is { } topAdjacentTile && !PlaneFieldRenderer.IsTileAlreadyDrawn (topAdjacentTile))
+            //             tilesPendingForDrawing.Add (topAdjacentTile);
+            //         if (GetTileAtCoordinates (tile.coordinate + Vector2Int.down) is { } bottomAdjacentTile && !PlaneFieldRenderer.IsTileAlreadyDrawn (bottomAdjacentTile))
+            //             tilesPendingForDrawing.Add (bottomAdjacentTile);
+            //         if (GetTileAtCoordinates (tile.coordinate + Vector2Int.left) is { } westAdjacentTile && !PlaneFieldRenderer.IsTileAlreadyDrawn (westAdjacentTile))
+            //             tilesPendingForDrawing.Add (westAdjacentTile);
+
+            //         tilesPendingForDrawing.Remove (tile);
+
+            //     }
+            //     yield return new WaitForSecondsRealtime (0.05f);
+
+            // }
+
+            for (int x = 0; x < grid.GetLength (0); x++) {
+                PlaneFieldRenderer.CreateVisualTile (grid[x, 0], tilePrefab);
+                for (int y = 1; y <= x; y++) {
+                    PlaneFieldRenderer.CreateVisualTile (grid[x - y, y], tilePrefab);
+                }
+
+                yield return new WaitForSecondsRealtime (0.05f);
+            }
+
+            for (int x = 0; x < grid.GetLength (0); x++) {
+
+                for (int y = grid.GetLength (1) - 1; y >= x; y--) {
+                    PlaneFieldRenderer.CreateVisualTile (grid[x, Mathf.Clamp (y - x, 0, grid.GetLength (1) - 1)], tilePrefab);
+                }
+
+                yield return new WaitForSecondsRealtime (0.05f);
+            }
+
+            // for (int x = 1; x < grid.GetLength (0); x++) {
+            //     // PlaneFieldRenderer.CreateVisualTile (grid[x, grid.GetLength (1) - 1], tilePrefab);
+            //     for (int x1 = grid.GetLength (1) - 1; x1 >= x; x1--) {
+            //         PlaneFieldRenderer.CreateVisualTile (grid[x1, grid.GetLength (1) - x], tilePrefab);
+
+            //         yield return new WaitForSecondsRealtime (0.05f);
+
+            //     }
+
+            //     yield return new WaitForSecondsRealtime (0.05f);
+
+            // }
+
+            onGridGenerationCompletion?.Invoke ();
         }
 
         public static void RegisterPallet (float baseSpawnRate, float spawnRateIncrement, GameObject palletPrefab, Action<SnakeController> onPalletPickup) {

@@ -60,14 +60,18 @@ namespace BrackeysJam2021.Assets.Manager {
 
         public void StartGame () {
             player.gameObject.SetActive (true);
-            PlaneField.GenerateGrid (transform.position, playAreaSize, tilePrefab);
-            player.currentPosition = PlaneField.Center;
-            player.currentDirection = Vector2Int.up;
-            movementCoroutine = StartCoroutine (player.MovePlayer ());
-            pelletSpawnerCoroutine = StartCoroutine (PlaneField.StartGeneratingPallets ());
-            exclusionZoneCoroutine = StartCoroutine (PlaneField.StartGeneratingExclusionZones ());
-            ScoreManager.Get.SetDisplayActive = true;
-            ScoreManager.Get.Score = 0;
+            StartCoroutine (PlaneField.GenerateGrid (transform.position, playAreaSize, tilePrefab, () => {
+
+                player.currentPosition = PlaneField.Center;
+                player.currentDirection = Vector2Int.up;
+                movementCoroutine = StartCoroutine (player.MovePlayer ());
+                pelletSpawnerCoroutine = StartCoroutine (PlaneField.StartGeneratingPallets ());
+                exclusionZoneCoroutine = StartCoroutine (PlaneField.StartGeneratingExclusionZones ());
+                ScoreManager.Get.SetDisplayActive = true;
+                ScoreManager.Get.Score = 0;
+
+            }));
+
         }
 
         public void EndGame () {
@@ -103,6 +107,7 @@ namespace BrackeysJam2021.Assets.Manager {
             if (PlaneField.Grid is { } createdGrid) {
 
                 foreach (var tile in createdGrid) {
+                    if (tile == null) continue;
                     Gizmos.color = (tile.coordinate == SnakeController.PlayerCoordinates ? Color.green : tile.Type == Tile.TileType.Walkable ? Color.cyan : tile.Type == Tile.TileType.Unwalkable ? Color.red : Color.yellow) - new Color (0, 0, 0, 0.5f);
                     Gizmos.DrawCube (tile.position, Vector3.one * 0.8f);
                 }
