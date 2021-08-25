@@ -13,6 +13,7 @@ public class SnakeController : MonoBehaviour {
 
     public float movementSpeed;
     public InputActionReference movementInput;
+    public InputActionReference pauseGame;
     public GameObject tailPrefab;
 
     internal Vector2Int currentPosition;
@@ -25,10 +26,12 @@ public class SnakeController : MonoBehaviour {
 
     private void OnEnable () {
         movementInput.action.Enable ();
+        pauseGame.action.Enable ();
     }
 
     private void OnDisable () {
         movementInput.action.Disable ();
+        pauseGame.action.Disable ();
     }
 
     public IEnumerator MovePlayer () {
@@ -38,6 +41,7 @@ public class SnakeController : MonoBehaviour {
 
         while (true) {
 
+            yield return new WaitUntil (() => !PlaneField.isGamePaused);
             yield return new WaitForSeconds (movementSpeed);
 
             oldPosition = currentPosition;
@@ -107,7 +111,12 @@ public class SnakeController : MonoBehaviour {
 
     private void Update () {
 
-        currentDirection = movementInput.action.ReadValue<Vector2> () is { } input && input != Vector2.zero ?
+        if (pauseGame.action.ReadValue<float> () > 0 && pauseGame.action.triggered) {
+            GameManager.Do.SetPauseState (!PlaneField.isGamePaused);
+        }
+
+        if (!PlaneField.isGamePaused)
+            currentDirection = movementInput.action.ReadValue<Vector2> () is { } input && input != Vector2.zero ?
             GetLockedDirection (new Vector2Int (Mathf.CeilToInt (input.x), Mathf.CeilToInt (input.y))) : currentDirection;
 
     }

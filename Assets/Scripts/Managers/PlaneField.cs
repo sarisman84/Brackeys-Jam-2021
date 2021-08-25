@@ -71,8 +71,8 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             int iterations = 1;
             List<Tile> tilesToReset = new List<Tile> ();
             while (true) {
+                yield return new WaitUntil (() => !isGamePaused);
                 yield return new WaitForSeconds (10f);
-
                 int zoneCount = iterations;
 
                 for (int count = 0; count < zoneCount; count++) {
@@ -153,6 +153,7 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             while (true) {
 
                 yield return new WaitForEndOfFrame ();
+                yield return new WaitUntil (() => !isGamePaused);
 
                 for (int i = 0; i < registeredPallets.Count; i++) {
                     Pallet registedPallet = registeredPallets[i];
@@ -188,6 +189,8 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
         public static Tile[, ] Grid => grid;
 
         public static Vector2Int Center => new Vector2Int (Mathf.RoundToInt (grid.GetLength (0) / 2f), Mathf.RoundToInt (grid.GetLength (1) / 2f));
+
+        public static bool isGamePaused { get; internal set; }
 
         public static Tile GetTileAtCoordinates (Vector2Int coordinates) {
             if (CoordinatesAreOutofBounds (coordinates))

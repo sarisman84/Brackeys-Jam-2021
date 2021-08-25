@@ -16,6 +16,7 @@ namespace BrackeysJam2021.Assets.Manager {
         public bool startGameOnAwake;
         [Header ("Events")]
         public UnityEvent onGameEnd;
+        public UnityEvent onGameTransitionToMainMenu, onPauseEvent, onResumeEvent;
 
         [Header ("Default Pallet Settings")]
         public GameObject defaultPalletPrefab;
@@ -89,9 +90,23 @@ namespace BrackeysJam2021.Assets.Manager {
             player.currentTail.Clear ();
             PlaneField.ResetGrid ();
 
-            onGameEnd?.Invoke ();
             ScoreManager.Get.SetDisplayActive = false;
+            onGameEnd?.Invoke ();
+        }
 
+        public void ResetGameToMainMenu () {
+
+            onGameTransitionToMainMenu?.Invoke ();
+        }
+
+        public void SetPauseState (bool value) {
+            PlaneField.isGamePaused = value;
+
+            if (PlaneField.isGamePaused) {
+                onPauseEvent?.Invoke ();
+            } else {
+                onResumeEvent?.Invoke ();
+            }
         }
 
         public void Quit () {
