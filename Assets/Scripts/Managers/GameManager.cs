@@ -59,16 +59,18 @@ namespace BrackeysJam2021.Assets.Manager {
         }
 
         public void StartGame () {
-            player.gameObject.SetActive (true);
-            StartCoroutine (PlaneField.GenerateGrid (transform.position, playAreaSize, tilePrefab, () => {
 
+            StartCoroutine (PlaneField.GenerateGrid (transform.position, playAreaSize, tilePrefab, () => {
+                ScoreManager.Get.SetDisplayActive = true;
+                ScoreManager.Get.Score = 0;
+            }, () => {
+
+                player.gameObject.SetActive (true);
                 player.currentPosition = PlaneField.Center;
                 player.currentDirection = Vector2Int.up;
                 movementCoroutine = StartCoroutine (player.MovePlayer ());
                 pelletSpawnerCoroutine = StartCoroutine (PlaneField.StartGeneratingPallets ());
                 exclusionZoneCoroutine = StartCoroutine (PlaneField.StartGeneratingExclusionZones ());
-                ScoreManager.Get.SetDisplayActive = true;
-                ScoreManager.Get.Score = 0;
 
             }));
 

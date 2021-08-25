@@ -36,10 +36,19 @@ public class AudioManager : MonoBehaviour {
         }
     }
 
-    public static void Play (string clip) {
-        if (AudioManager.Get.customClips.Find (c => c.clipID == clip) is { } clipFound) {
-            clipFound.player.Play ();
+    public static void Play (string clip, bool waitForCompletion = false) {
+        if (waitForCompletion) {
+            if (AudioManager.Get.customClips.Find (c => c.clipID == clip) is { } clipFound && !clipFound.player.isPlaying) {
+
+                clipFound.player.Play ();
+            }
+        } else {
+            if (AudioManager.Get.customClips.Find (c => c.clipID == clip) is { } clipFound) {
+
+                clipFound.player.Play ();
+            }
         }
+
     }
 
     [Serializable]

@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 
 using BrackeysJam2021.Assets.Scripts.Managers.GridAssets;
+
+using DG.Tweening;
 
 using UnityEngine;
 
@@ -10,16 +13,24 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
 
         public static Color TransparentColor => new Color (0, 0, 0, 0);
 
-        public static void CreateVisualTile (Tile tile, SpriteRenderer tilePrefab) {
+        public static void CreateVisualTile (Tile tile, SpriteRenderer tilePrefab, Action<VisualTile> onTileDraw = null) {
             if (registeredTilesToRender.ContainsKey (tile.coordinate)) {
                 registeredTilesToRender[tile.coordinate].renderer.gameObject.SetActive (true);
                 SetVisualTileColor (tile, GetDefaultVisualTileColor (tile));
+                onTileDraw?.Invoke (registeredTilesToRender[tile.coordinate]);
             } else {
-                SpriteRenderer tileVisual = Object.Instantiate (tilePrefab, GameObject.FindGameObjectWithTag ("Grid").transform);
+                SpriteRenderer tileVisual = UnityEngine.Object.Instantiate<SpriteRenderer> (tilePrefab, GameObject.FindGameObjectWithTag ("Grid").transform);
                 tileVisual.transform.position = tile.position;
                 registeredTilesToRender.Add (tile.coordinate, new VisualTile (tileVisual));
+                onTileDraw?.Invoke (registeredTilesToRender[tile.coordinate]);
             }
 
+        }
+
+        public static VisualTile GetVisualTile (Tile tile) {
+            if (registeredTilesToRender.ContainsKey (tile.coordinate))
+                return registeredTilesToRender[tile.coordinate];
+            return new VisualTile ();
         }
 
         public static void RemoveVisualTile (Tile tile) {
@@ -57,6 +68,21 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             }
             Debug.LogWarning ($"Couldnt find corresponding visual tile to get its color to at:({tile.coordinate}). Skipping.");
             return new Color ();
+        }
+
+        public static void DOTileScale (VisualTile tile, Vector3 initialScale, Vector3 targetScale, float duration) {
+            tile.renderer.transform.localScale = initialScale;
+            tile.renderer.transform.DOScale (targetScale, duration);
+        }
+
+        public static void DOTileScale (Tile tile, Vector3 initialScale, Vector3 targetScale, float duration) {
+            if (registeredTilesToRender.ContainsKey (tile.coordinate)) {
+                VisualTile vTile = registeredTilesToRender[tile.coordinate];
+                vTile.renderer.transform.localScale = initialScale;
+                vTile.renderer.transform.DOScale (targetScale, duration);
+                return;
+            }
+
         }
 
     }

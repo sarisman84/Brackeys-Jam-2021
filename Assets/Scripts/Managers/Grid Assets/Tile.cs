@@ -32,12 +32,16 @@ namespace BrackeysJam2021.Assets.Scripts.Managers.GridAssets {
             this.type = type;
             switch (type) {
                 case TileType.Walkable:
+                    PlaneFieldRenderer.DOTileScale (this, PlaneFieldRenderer.GetVisualTile (this) is { } existing && !existing.Equals (new VisualTile ()) ? existing.renderer.transform.localScale : Vector3.zero, new Vector3 (0.42f, 0.42f, 1), 0.5f);
+                    break;
                 case TileType.Pickup:
-                    PlaneFieldRenderer.SetVisualTileColor (this, PlaneFieldRenderer.GetDefaultVisualTileColor (this));
+                    // PlaneFieldRenderer.SetVisualTileColor (this, PlaneFieldRenderer.GetDefaultVisualTileColor (this));
+                    AudioManager.Play ("Pickup_Spawn");
                     break;
 
                 case TileType.Unwalkable:
-                    PlaneFieldRenderer.SetVisualTileColor (this, PlaneFieldRenderer.TransparentColor);
+                    // PlaneFieldRenderer.SetVisualTileColor (this, PlaneFieldRenderer.TransparentColor);
+                    PlaneFieldRenderer.DOTileScale (this, new Vector3 (0.42f, 0.42f, 1), Vector3.zero, 0.5f);
                     break;
             }
         }
