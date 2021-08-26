@@ -62,7 +62,7 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             onGridGenerationCompletion?.Invoke ();
         }
 
-        public static void RegisterPallet (float baseSpawnRate, float spawnRateIncrement, GameObject palletPrefab, Action<SnakeController> onPalletPickup) {
+        public static void RegisterPallet (float baseSpawnRate, float spawnRateIncrement, GameObject palletPrefab, Action<Snake> onPalletPickup) {
             registeredPallets.Add (new Pallet (baseSpawnRate, spawnRateIncrement, palletPrefab, onPalletPickup));
         }
 
@@ -98,12 +98,17 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             }
         }
 
-        private static Tile GetTileAtRandomCoordinatesAwayFromThePlayer (Vector2Int zoneSize) {
-            Tile foundTile = GetTileAtRandomCoordinates ();
+        private static Tile GetTileAtRandomCoordinatesAwayFromThePlayer (Vector2Int zoneSize, int depth = 5) {
 
-            if (TileIsInsideTheBoundaryOf (foundTile, SnakeController.PlayerCoordinates, zoneSize + new Vector2Int (12, 12))) {
-                return GetTileAtRandomCoordinatesAwayFromThePlayer (zoneSize);
+            Tile foundTile = GetTileAtRandomCoordinates ();
+            foreach (var snake in SnakeController.SnakeEntities) {
+
+                if (TileIsInsideTheBoundaryOf (foundTile, snake.PlayerCoordinate, zoneSize + new Vector2Int (12, 12)) && depth > 0) {
+                    foundTile = GetTileAtRandomCoordinatesAwayFromThePlayer (zoneSize, depth - 1);
+                }
+
             }
+
             return foundTile;
         }
 
@@ -127,6 +132,7 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
 
             for (int x = -Mathf.RoundToInt (zoneSize.x / 2f); x < Mathf.RoundToInt (zoneSize.x / 2f) / 2f; x++) {
                 for (int y = -Mathf.RoundToInt (zoneSize.y / 2f); y < Mathf.RoundToInt (zoneSize.y / 2f) / 2f; y++) {
+                    if (tile == null) continue;
                     Vector2Int localCoordinates = tile.coordinate + new Vector2Int (x, y);
                     if (CoordinatesAreOutofBounds (localCoordinates)) continue;
                     Tile foundTile = grid[localCoordinates.x, localCoordinates.y];
