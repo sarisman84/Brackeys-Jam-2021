@@ -16,11 +16,10 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             publicCode = "61266bc58f40bb6e98b16d61",
             webURL = "http://dreamlo.com/lb/";
 
-        public TMP_Text scoreDisplayer;
+        public TMP_Text scoreDisplayer, gameOverScoreDisplayer;
 
         [Header ("Highscore Settings")]
         public TMP_InputField highscoreInputField;
-        public Button applyHighscoreButton;
         public Highscore[] highscoresList;
         public TMP_Text[] highscoreDisplayList;
 
@@ -88,6 +87,11 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
         public void FetchHighscoresAndDisplayThem () {
             UpdateHighscoreList ();
             StartCoroutine (DownloadHighscoresFromDatabase (UpdateHighscoreList));
+        }
+
+        public void DisplayScoreOnGameOver () {
+            if (gameOverScoreDisplayer)
+                gameOverScoreDisplayer.text = $"Personal Score:{System.Environment.NewLine}{Score}";
         }
 
         IEnumerator UploadNewHighscore (string username, int score, Action onHighscoreUploaded) {

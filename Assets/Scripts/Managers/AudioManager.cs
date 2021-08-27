@@ -36,7 +36,7 @@ public class AudioManager : MonoBehaviour {
         }
     }
 
-    public static void Play (string clip, bool waitForCompletion = false) {
+    public static void Play (string clip, bool waitForCompletion) {
         if (waitForCompletion) {
             if (AudioManager.Get.customClips.Find (c => c.clipID == clip) is { } clipFound && !clipFound.player.isPlaying) {
 
@@ -49,6 +49,16 @@ public class AudioManager : MonoBehaviour {
             }
         }
 
+    }
+
+    public static void Play (string clip) {
+        Play (clip, false);
+    }
+
+    public static void Stop (string clip) {
+        if (AudioManager.Get.customClips.Find (c => c.clipID == clip) is { } clipFound) {
+            clipFound.player.Stop ();
+        }
     }
 
     [Serializable]

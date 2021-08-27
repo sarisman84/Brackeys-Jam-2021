@@ -23,14 +23,14 @@ public class SnakeController : MonoBehaviour {
 
     public void ResetSnakes () {
         foreach (var snake in SnakeEntities) {
-            snake.RemoveSnakeObject ();
+            snake.RemoveSnakeObject (this);
         }
         SnakeEntities.Clear ();
     }
 
-    public Snake CreateSnake (GameObject snakePrefab, Vector2Int spawnCoordinate, Vector2Int spawnDirection, int initialTailCount = 3) {
-        Snake newSnake = new Snake (snakePrefab, tailPrefab, spawnCoordinate, (snake) => {
-            snake.RemoveSnakeObject ();
+    public Snake CreateSnake (GameObject snakePrefab, Vector2Int spawnCoordinate, Vector2Int spawnDirection, int initialTailCount = 3, Action onSnakeSpawn = (null)) {
+        Snake newSnake = new Snake (snakePrefab, tailPrefab, spawnCoordinate, movementSpeed, (snake) => {
+            snake.RemoveSnakeObject (this);
             SnakeEntities.Remove (snake);
             if (SnakeEntities.Count == 0) {
                 GameManager.Do.EndGame ();
@@ -39,45 +39,34 @@ public class SnakeController : MonoBehaviour {
         currentDirection = spawnDirection;
 
         SnakeEntities.Add (newSnake);
+        onSnakeSpawn?.Invoke ();
         return newSnake;
     }
 
-    public void SplitSnake (GameObject snakePrefab, int splitThreshold = 5) {
+    public List<Snake> SplitSnake (GameObject snakePrefab, int splitThreshold = 5) {
         List<Snake> newSnakes = new List<Snake> ();
 
         for (int i = 0; i < SnakeEntities.Count; i++) {
             Snake snake = i >= SnakeEntities.Count ? null : SnakeEntities[i];
             if (snake != null)
-                if (snake.currentTail.Count > 5) {
+                if (snake.currentTail.Count > splitThreshold) {
 
                     Vector2Int curPos = snake.currentTail[5].currentCoordinate;
 
-                    CreateSnake (snakePrefab, curPos, currentDirection, 3);
-                    snake.SetTailSize (3);
+                    Snake newSnake = CreateSnake (snakePrefab, curPos, currentDirection, Mathf.CeilToInt (splitThreshold / 2f), () => {
+                        AudioManager.Play ("Split_Player");
+                    });
+                    snake.SetTailSize (Mathf.FloorToInt (splitThreshold / 2f));
+
+                    newSnake.movementCoroutine = StartCoroutine (newSnake.Move (this));
 
                 }
         }
 
         SnakeEntities.AddRange (newSnakes);
+        return newSnakes;
     }
 
-    public IEnumerator MovePlayer () {
-        yield return null;
-
-        while (true) {
-
-            yield return new WaitUntil (() => !PlaneField.isGamePaused);
-            yield return new WaitForSeconds (movementSpeed);
-
-            for (int i = 0; i < SnakeEntities.Count; i++) {
-                Snake snake = SnakeEntities.Count <= i ? null : SnakeEntities[i];
-                if (snake != null)
-                    snake.Move (currentDirection);
-            }
-
-        }
-
-    }
     private void OnEnable () {
         movementInput.action.Enable ();
         pauseGame.action.Enable ();
@@ -96,6 +85,8 @@ public class SnakeController : MonoBehaviour {
         if (!PlaneField.isGamePaused)
             currentDirection = movementInput.action.ReadValue<Vector2> () is { } input && input != Vector2.zero ?
             GetLockedDirection (new Vector2Int (Mathf.CeilToInt (input.x), Mathf.CeilToInt (input.y))) : currentDirection;
+
+        print (currentDirection);
 
     }
 
@@ -132,9 +123,11 @@ public class Tail {
 
     public Tail (GameObject tailModel) {
         this.tailModel = UnityEngine.Object.Instantiate (tailModel, GameObject.FindGameObjectWithTag ("Player").transform);
+
     }
 
     public void MoveTail (Vector2Int newCoordinate, List<Tail> currentTail) {
+        if (!tailModel) return;
         oldCoordinate = currentCoordinate;
         currentCoordinate = newCoordinate;
         Tile resultingTile = PlaneField.GetTileAtCoordinates (newCoordinate);
@@ -159,21 +152,29 @@ public class Tail {
 }
 
 public class Snake {
+    public List<Tail> currentTail;
+    public float moddedMovementSpeed;
+    public Coroutine movementCoroutine;
+
     private Vector2Int currentPosition;
     private Vector2Int oldPosition;
 
-    public List<Tail> currentTail;
+    private float movementSpeed;
+
     private Transform transform;
 
     public Vector2Int PlayerCoordinate => currentPosition;
     public Vector2Int PlayerOldCoordinate => oldPosition;
+    public float PlayerMovementSpeed => movementSpeed;
 
     private Action<Snake> onSnakeDeath;
 
-    public Snake (GameObject snakePrefab, GameObject tailPrefab, Vector2Int spawningCoordinate, Action<Snake> onSnakeDeath, int initialTailSize) {
+    public Snake (GameObject snakePrefab, GameObject tailPrefab, Vector2Int spawningCoordinate, float baseMovementSpeed, Action<Snake> onSnakeDeath, int initialTailSize) {
         transform = Object.Instantiate (snakePrefab).transform;
         currentPosition = spawningCoordinate;
         this.onSnakeDeath = onSnakeDeath;
+        movementSpeed = baseMovementSpeed;
+        moddedMovementSpeed = 0;
         currentTail = new List<Tail> ();
         int iteration = 0;
 
@@ -181,42 +182,49 @@ public class Snake {
             AddTailPart (tailPrefab);
             iteration++;
         }
+
     }
 
-    public void Move (Vector2Int coordinateDirection) {
-        oldPosition = currentPosition;
-        currentPosition += coordinateDirection;
-        Tile resultingTile = PlaneField.GetTileAtCoordinates (currentPosition);
+    public IEnumerator Move (SnakeController controller) {
 
-        if (resultingTile == null) {
-            onSnakeDeath?.Invoke (this);
-            return;
-        }
+        while (true) {
+            yield return new WaitUntil (() => !PlaneField.isGamePaused);
+            yield return new WaitForSeconds (Mathf.Max (movementSpeed - moddedMovementSpeed, 0.05f));
 
-        switch (resultingTile.Type) {
-            case Tile.TileType.Walkable:
-                transform.position = resultingTile.position;
-                UpdateTailPosition (oldPosition);
-                break;
+            oldPosition = currentPosition;
+            currentPosition += controller.currentDirection;
+            Tile resultingTile = PlaneField.GetTileAtCoordinates (currentPosition);
 
-            case Tile.TileType.Pickup:
-                transform.position = resultingTile.position;
-
-                if (resultingTile.assignedPallet != null) {
-                    resultingTile.assignedPallet.OnPalletPickupAlt?.Invoke (this);
-                    resultingTile.assignedPallet.RemovePallet ();
-                }
-                resultingTile.assignedPallet = null;
-
-                resultingTile.SetTileType (Tile.TileType.Walkable);
-                break;
-
-            case Tile.TileType.Unwalkable:
+            if (resultingTile == null) {
                 onSnakeDeath?.Invoke (this);
-                break;
+                yield break;
+            }
 
-            default:
-                break;
+            switch (resultingTile.Type) {
+                case Tile.TileType.Walkable:
+                    transform.position = resultingTile.position;
+                    UpdateTailPosition (oldPosition);
+                    break;
+
+                case Tile.TileType.Pickup:
+                    transform.position = resultingTile.position;
+
+                    if (resultingTile.assignedPallet != null) {
+                        resultingTile.assignedPallet.OnPalletPickupAlt?.Invoke (this);
+                        resultingTile.assignedPallet.RemovePallet ();
+                    }
+                    resultingTile.assignedPallet = null;
+
+                    resultingTile.SetTileType (Tile.TileType.Walkable);
+                    break;
+
+                case Tile.TileType.Unwalkable:
+                    onSnakeDeath?.Invoke (this);
+                    break;
+
+                default:
+                    break;
+            }
         }
 
     }
@@ -229,7 +237,7 @@ public class Snake {
     public void UpdateTailPosition (Vector2Int coordinate) {
         for (int tailIndex = currentTail.Count - 1; tailIndex >= 0; tailIndex--) {
             if (currentTail[tailIndex].currentCoordinate == currentPosition) {
-                GameManager.Do.EndGame ();
+                onSnakeDeath?.Invoke (this);
                 break;
             }
 
@@ -244,18 +252,21 @@ public class Snake {
         }
     }
 
-    public void RemoveSnakeObject () {
+    public void RemoveSnakeObject (SnakeController controller) {
+        controller.StopCoroutine (movementCoroutine);
         foreach (var tail in currentTail) {
-            Object.Destroy (tail.tailModel);
+            if (tail.tailModel)
+                Object.Destroy (tail.tailModel);
         }
         currentTail.Clear ();
-        Object.Destroy (transform.gameObject);
+        if (transform)
+            Object.Destroy (transform.gameObject);
     }
 
     public void SetTailSize (int tailSize) {
         for (int i = 0; i < tailSize; i++) {
             Object.Destroy (currentTail[i].tailModel);
         }
-        currentTail.RemoveRange (0, currentTail.Count - tailSize);
+        currentTail.RemoveRange (0, tailSize);
     }
 }

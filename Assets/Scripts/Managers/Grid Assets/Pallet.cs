@@ -45,4 +45,17 @@ namespace BrackeysJam2021.Assets.Scripts.Managers.GridAssets {
             OnPalletPickupAlt?.Invoke (player);
         }
     }
+
+    [Serializable]
+    public struct PalletInfo {
+        public float initialSpawnRate;
+        public float spawnRateIncrement;
+        public GameObject palletPrefab;
+        public PalletType palletType;
+
+        public enum PalletType {
+            Score,
+            Speedboost
+        }
+    }
 }

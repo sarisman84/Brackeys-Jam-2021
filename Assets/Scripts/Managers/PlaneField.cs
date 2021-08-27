@@ -72,8 +72,8 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             List<Tile> tilesToReset = new List<Tile> ();
             while (true) {
                 yield return new WaitUntil (() => !isGamePaused);
-                yield return new WaitForSeconds (10f);
-                int zoneCount = iterations;
+                yield return new WaitForSeconds (Mathf.Max (10f - (iterations - 1), Random.Range (4f, 6f)));
+                int zoneCount = Mathf.Min (iterations, 4);
 
                 for (int count = 0; count < zoneCount; count++) {
 
@@ -130,8 +130,8 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
 
             Tile tile = GetTileAtRandomCoordinatesAwayFromThePlayer (zoneSize);
 
-            for (int x = -Mathf.RoundToInt (zoneSize.x / 2f); x < Mathf.RoundToInt (zoneSize.x / 2f) / 2f; x++) {
-                for (int y = -Mathf.RoundToInt (zoneSize.y / 2f); y < Mathf.RoundToInt (zoneSize.y / 2f) / 2f; y++) {
+            for (int x = -Mathf.RoundToInt (zoneSize.x / 2f); x < Mathf.RoundToInt (zoneSize.x / 2f); x++) {
+                for (int y = -Mathf.RoundToInt (zoneSize.y / 2f); y < Mathf.RoundToInt (zoneSize.y / 2f); y++) {
                     if (tile == null) continue;
                     Vector2Int localCoordinates = tile.coordinate + new Vector2Int (x, y);
                     if (CoordinatesAreOutofBounds (localCoordinates)) continue;
@@ -165,7 +165,7 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
                     Pallet registedPallet = registeredPallets[i];
                     registedPallet.CurrentSpawnRate += Time.deltaTime;
 
-                    if (registedPallet.CurrentSpawnRate >= Mathf.Max (registedPallet.BaseSpawnRate - registedPallet.ModifiedSpawnRate, 0.85f)) {
+                    if (registedPallet.CurrentSpawnRate >= Mathf.Max (registedPallet.BaseSpawnRate - registedPallet.ModifiedSpawnRate, 2.25f)) {
 
                         Tile randomTile = GetTileAtRandomCoordinates ();
 
