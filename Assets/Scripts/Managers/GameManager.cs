@@ -19,6 +19,7 @@ namespace BrackeysJam2021.Assets.Manager {
         public SpriteRenderer tilePrefab;
         public bool startGameOnAwake;
         [Header ("Events")]
+        public UnityEvent onGameStart;
         public UnityEvent onGameEnd;
         public UnityEvent onGameTransitionToMainMenu, onPauseEvent, onResumeEvent;
 
@@ -92,6 +93,8 @@ namespace BrackeysJam2021.Assets.Manager {
                 exclusionZoneCoroutine = StartCoroutine (PlaneField.StartGeneratingExclusionZones ());
 
             }));
+
+            onGameStart?.Invoke ();
 
         }
 
