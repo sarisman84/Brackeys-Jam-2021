@@ -99,11 +99,13 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
         }
 
         private static Tile GetTileAtRandomCoordinatesAwayFromThePlayer (Vector2Int zoneSize, int depth = 5) {
-
+            if (depth <= 0) {
+                return null;
+            }
             Tile foundTile = GetTileAtRandomCoordinates ();
             foreach (var snake in SnakeController.SnakeEntities) {
 
-                if (TileIsInsideTheBoundaryOf (foundTile, snake.PlayerCoordinate, zoneSize + new Vector2Int (12, 12)) && depth > 0) {
+                if (TileIsInsideTheBoundaryOf (foundTile, snake.PlayerCoordinate, zoneSize + new Vector2Int (5, 5))) {
                     foundTile = GetTileAtRandomCoordinatesAwayFromThePlayer (zoneSize, depth - 1);
                 }
 
@@ -129,26 +131,30 @@ namespace BrackeysJam2021.Assets.Scripts.Managers {
             List<Tile> resultingZone = new List<Tile> ();
 
             Tile tile = GetTileAtRandomCoordinatesAwayFromThePlayer (zoneSize);
+            if (tile != null)
+            {
+                for (int x = -Mathf.RoundToInt(zoneSize.x / 2f); x < Mathf.RoundToInt(zoneSize.x / 2f); x++)
+                {
+                    for (int y = -Mathf.RoundToInt(zoneSize.y / 2f); y < Mathf.RoundToInt(zoneSize.y / 2f); y++)
+                    {
+                        if (tile == null) continue;
+                        Vector2Int localCoordinates = tile.coordinate + new Vector2Int(x, y);
+                        if (CoordinatesAreOutofBounds(localCoordinates)) continue;
+                        Tile foundTile = grid[localCoordinates.x, localCoordinates.y];
+                        if (foundTile.Type == Tile.TileType.Pickup)
+                        {
+                            foundTile.assignedPallet?.RemovePallet();
+                            foundTile.assignedPallet = null;
+                        }
 
-            for (int x = -Mathf.RoundToInt (zoneSize.x / 2f); x < Mathf.RoundToInt (zoneSize.x / 2f); x++) {
-                for (int y = -Mathf.RoundToInt (zoneSize.y / 2f); y < Mathf.RoundToInt (zoneSize.y / 2f); y++) {
-                    if (tile == null) continue;
-                    Vector2Int localCoordinates = tile.coordinate + new Vector2Int (x, y);
-                    if (CoordinatesAreOutofBounds (localCoordinates)) continue;
-                    Tile foundTile = grid[localCoordinates.x, localCoordinates.y];
-                    if (foundTile.Type == Tile.TileType.Pickup) {
-                        foundTile.assignedPallet?.RemovePallet ();
-                        foundTile.assignedPallet = null;
+                        foundTile.SetTileType(Tile.TileType.Unwalkable);
+
+                        resultingZone.Add(foundTile);
                     }
-
-                    foundTile.SetTileType (Tile.TileType.Unwalkable);
-
-                    resultingZone.Add (foundTile);
                 }
+
+                AudioManager.Play("Exclusion_Spawn");
             }
-
-            AudioManager.Play ("Exclusion_Spawn");
-
             return resultingZone;
         }
 
