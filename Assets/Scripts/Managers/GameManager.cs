@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 using BrackeysJam2021.Assets.Scripts.Managers;
 using BrackeysJam2021.Assets.Scripts.Managers.GridAssets;
 
@@ -10,7 +13,8 @@ namespace BrackeysJam2021.Assets.Manager {
 
     public class GameManager : MonoBehaviour {
 
-        public SnakeController player;
+        public SnakeController playerController;
+        public GameObject playerPrefabModel;
         public Vector2Int playAreaSize = new Vector2Int (30, 30);
         public SpriteRenderer tilePrefab;
         public bool startGameOnAwake;
@@ -18,9 +22,8 @@ namespace BrackeysJam2021.Assets.Manager {
         public UnityEvent onGameEnd;
         public UnityEvent onGameTransitionToMainMenu, onPauseEvent, onResumeEvent;
 
-        [Header ("Default Pallet Settings")]
-        public GameObject defaultPalletPrefab;
-        public float startingDefaultPalletSpawningRate, defaultPalletSpawningRateIncrement;
+        [Header ("Pallet Settings")]
+        public List<PalletInfo> palletPresets;
 
         Coroutine movementCoroutine, pelletSpawnerCoroutine, exclusionZoneCoroutine;
 
@@ -35,13 +38,6 @@ namespace BrackeysJam2021.Assets.Manager {
 
             Do = this;
             ScoreManager.Get.SetDisplayActive = false;
-            try {
-                player.gameObject.SetActive (false);
-                player.transform.position = Vector3.zero;
-            } catch {
-
-                Debug.LogError ($"Player missing! (Have you forgotten to assign the player in {gameObject.name})");
-            }
 
             RegisterPallets ();
 
@@ -51,12 +47,33 @@ namespace BrackeysJam2021.Assets.Manager {
         }
 
         private void RegisterPallets () {
-            PlaneField.RegisterPallet (startingDefaultPalletSpawningRate, defaultPalletSpawningRateIncrement, defaultPalletPrefab, (player) => {
-                player.currentTail.Add (new SnakeController.Tail (player.tailPrefab));
-                player.UpdateTailPosition (player.oldPosition);
-                ScoreManager.Get.Score += 10;
-                AudioManager.Play ("Pallet_Pickup");
-            });
+            foreach (var preset in palletPresets) {
+                PlaneField.RegisterPallet (preset.initialSpawnRate, preset.spawnRateIncrement, preset.palletPrefab, (snake) => {
+
+                    switch (preset.palletType) {
+                        case PalletInfo.PalletType.Score:
+                            AddScore (snake);
+                            break;
+                        case PalletInfo.PalletType.Speedboost:
+                            AddScore (snake);
+                            snake.moddedMovementSpeed += 0.005f;
+                            break;
+                    }
+
+                    AudioManager.Play ("Pallet_Pickup");
+                });
+            }
+
+        }
+
+        private void AddScore (Snake snake) {
+            int score = Mathf.RoundToInt (10 + (SnakeController.SnakeEntities.Count - 1) * 15f);
+            print ($"Current Score earned: {score}");
+            ScoreManager.Get.Score += score;
+            snake.currentTail.Add (new Tail (playerController.tailPrefab));
+            snake.UpdateTailPosition (snake.PlayerOldCoordinate);
+            List<Snake> snakes = playerController.SplitSnake (playerPrefabModel, 10);
+
         }
 
         public void StartGame () {
@@ -66,10 +83,11 @@ namespace BrackeysJam2021.Assets.Manager {
                 ScoreManager.Get.Score = 0;
             }, () => {
 
-                player.gameObject.SetActive (true);
-                player.currentPosition = PlaneField.Center;
-                player.currentDirection = Vector2Int.up;
-                movementCoroutine = StartCoroutine (player.MovePlayer ());
+                Snake player = playerController.CreateSnake (playerPrefabModel, PlaneField.Center, Vector2Int.up, 3, () => {
+                    AudioManager.Play ("Spawn_Player");
+                });
+
+                player.movementCoroutine = StartCoroutine (player.Move (playerController));
                 pelletSpawnerCoroutine = StartCoroutine (PlaneField.StartGeneratingPallets ());
                 exclusionZoneCoroutine = StartCoroutine (PlaneField.StartGeneratingExclusionZones ());
 
@@ -78,16 +96,13 @@ namespace BrackeysJam2021.Assets.Manager {
         }
 
         public void EndGame () {
-            player.transform.position = Vector3.zero;
-            player.gameObject.SetActive (false);
-            foreach (var tailPart in player.currentTail) {
-                Destroy (tailPart.tailModel);
-            }
 
-            StopCoroutine (movementCoroutine);
+            playerController.ResetSnakes ();
+
             StopCoroutine (pelletSpawnerCoroutine);
+
             StopCoroutine (exclusionZoneCoroutine);
-            player.currentTail.Clear ();
+
             PlaneField.ResetGrid ();
 
             ScoreManager.Get.SetDisplayActive = false;
@@ -125,7 +140,10 @@ namespace BrackeysJam2021.Assets.Manager {
 
                 foreach (var tile in createdGrid) {
                     if (tile == null) continue;
-                    Gizmos.color = (tile.coordinate == SnakeController.PlayerCoordinates ? Color.green : tile.Type == Tile.TileType.Walkable ? Color.cyan : tile.Type == Tile.TileType.Unwalkable ? Color.red : Color.yellow) - new Color (0, 0, 0, 0.5f);
+                    Gizmos.color = (tile.Type == Tile.TileType.Walkable ? Color.cyan : tile.Type == Tile.TileType.Unwalkable ? Color.red : Color.yellow) - new Color (0, 0, 0, 0.5f);
+                    foreach (var snake in SnakeController.SnakeEntities) {
+                        Gizmos.color = (tile.coordinate == snake.PlayerCoordinate) ? Color.green - new Color (0, 0, 0, 0.5f) : Gizmos.color;
+                    }
                     Gizmos.DrawCube (tile.position, Vector3.one * 0.8f);
                 }
             }
